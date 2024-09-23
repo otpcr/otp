@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# This file is placed in the Public Domain.
+
+
+"daemon"
+
+
+import getpass
+import os
+import sys
+
+
+sys.path.insert(0, os.getcwd())
+
+
+from otp.client  import Client
+from otp.command import parse, scanner
+from otp.config  import Config
+from otp.main    import banner, daemon, forever, modnames
+from otp.main    import pidfile, privileges, wrap
+from otp.runtime import errors 
+
+
+if os.path.exists('mods'):
+    from mods import face as MODS
+else:
+    MODS = None
+
+
+def main():
+    "main"
+    daemon()
+    mods = ",".join(modnames(MODS))
+    user = getpass.getuser()
+    privileges(user)
+    pidfile(Config.pidfile)
+    for mod in scanner(mods, MODS):
+        if "init" in dir(mod):
+            mod.init()
+    forever()
+
+
+if __name__ == "__main__":
+    wrap(main, print)
+    errors(print)
